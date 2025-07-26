@@ -21,9 +21,6 @@ app.get("/api/chat/:id",(req,res)=>{
     res.send(chat);    
 });
 
-
-
-
 const PORT=process.env.PORT || 5000;
 
 app.listen(5000,()=>{
