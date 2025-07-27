@@ -3,6 +3,8 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDb = require("./config/db");
 const userRoutes = require("./routes/userRoutes");
+const {notFound,errorHandler}=require('./middleware/errorMiddleware')
+const chatRoutes=require('./routes/chatRoutes')
 
 dotenv.config();
 connectDb();
@@ -18,6 +20,11 @@ app.get("/", (req, res) => {
 
 // User routes
 app.use("/api/user", userRoutes);
+app.use('/api/chat', chatRoutes);
+
+
+app.use(notFound)
+app.use(errorHandler)
 
 // Server listen
 const PORT = process.env.PORT || 5000;

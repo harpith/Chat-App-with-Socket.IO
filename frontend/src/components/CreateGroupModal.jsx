@@ -1,75 +1,108 @@
+// components/CreateGroupModal.jsx
 "use client"
 
 import { useState } from "react"
+import axios from "axios"
 
-export default function CreateGroupModal({ onClose }) {
-  const [groupName, setGroupName] = useState("Hello")
-  const [searchUser, setSearchUser] = useState("John")
-  const [selectedUsers, setSelectedUsers] = useState(["JOHN100"])
+export default function CreateGroupModal({ onClose, onCreated }) {
+  const [groupName, setGroupName] = useState("")
+  const [selectedUsers, setSelectedUsers] = useState([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [searchResults, setSearchResults] = useState([])
+  const userInfo = JSON.parse(localStorage.getItem("userInfo"))
 
-  const users = [
-    { name: "Guest User", email: "guest@example.com", selected: true },
-    { name: "Guest User", email: "guest@example.com", selected: false },
-    { name: "Guest User", email: "guest@example.com", selected: false },
-    { name: "Guest User", email: "guest@example.com", selected: false },
-  ]
+  const handleSearch = async () => {
+    if (!searchTerm) return
+    const { data } = await axios.get(`http://localhost:5000/api/user?search=${searchTerm}`, {
+      headers: { Authorization: `Bearer ${userInfo.token}` },
+    })
+    setSearchResults(data)
+  }
 
-  const removeUser = (user) => {
-    setSelectedUsers(selectedUsers.filter((u) => u !== user))
+  const handleAddUser = (user) => {
+    if (!selectedUsers.find((u) => u._id === user._id)) {
+      setSelectedUsers([...selectedUsers, user])
+    }
+  }
+
+  const handleRemoveUser = (userId) => {
+    setSelectedUsers(selectedUsers.filter((u) => u._id !== userId))
+  }
+
+  const handleCreateGroup = async () => {
+    if (!groupName || selectedUsers.length < 2) {
+      alert("Group must have a name and at least 2 users.")
+      return
+    }
+
+    const { data } = await axios.post(
+      "http://localhost:5000/api/chat/group",
+      {
+        name: groupName,
+        users: JSON.stringify(selectedUsers.map((u) => u._id)),
+      },
+      {
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${userInfo.token}`,
+        },
+      }
+    )
+
+    onCreated(data)
   }
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-2xl w-full max-w-md mx-4 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-medium text-gray-800">Create Group Chat</h2>
-          <button onClick={onClose} className="text-gray-500 hover:text-gray-700 p-1">✖️</button>
+    <div className="fixed inset-0 bg-black bg-opacity-30 flex items-center justify-center z-50">
+      <div className="bg-white p-6 rounded-xl w-full max-w-md space-y-4 shadow-lg">
+        <h2 className="text-xl font-semibold text-gray-800">Create Group Chat</h2>
+
+        <input
+          type="text"
+          placeholder="Group Name"
+          value={groupName}
+          onChange={(e) => setGroupName(e.target.value)}
+          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+        />
+
+        <div className="flex space-x-2">
+          <input
+            type="text"
+            placeholder="Search users"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+          />
+          <button onClick={handleSearch} className="bg-blue-500 text-white px-3 py-2 rounded-md">
+            Search
+          </button>
         </div>
 
-        <div className="space-y-4">
-          <input
-            placeholder="Chat Name"
-            value={groupName}
-            onChange={(e) => setGroupName(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="flex flex-wrap gap-2">
+          {selectedUsers.map((user) => (
+            <div key={user._id} className="bg-blue-100 px-2 py-1 rounded-full text-sm flex items-center gap-1">
+              {user.name}
+              <button onClick={() => handleRemoveUser(user._id)} className="text-red-500 text-xs">x</button>
+            </div>
+          ))}
+        </div>
 
-          <input
-            placeholder="Add Users eg: John, Piyush, Jane"
-            value={searchUser}
-            onChange={(e) => setSearchUser(e.target.value)}
-            className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-          />
+        <div className="max-h-32 overflow-y-auto">
+          {searchResults.map((user) => (
+            <div
+              key={user._id}
+              className="cursor-pointer hover:bg-gray-100 px-2 py-1"
+              onClick={() => handleAddUser(user)}
+            >
+              {user.name} <span className="text-xs text-gray-400">({user.email})</span>
+            </div>
+          ))}
+        </div>
 
-          <div className="flex flex-wrap gap-2">
-            {selectedUsers.map((user, index) => (
-              <div key={index} className="bg-purple-500 text-white px-3 py-1 rounded-full text-sm flex items-center space-x-2">
-                <span>{user}</span>
-                <button onClick={() => removeUser(user)} className="text-white hover:text-gray-200">✖️</button>
-              </div>
-            ))}
-          </div>
-
-          <div className="space-y-2 max-h-48 overflow-y-auto">
-            {users.map((user, index) => (
-              <div key={index} className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors ${
-                user.selected ? "bg-teal-500 text-white" : "bg-gray-100 hover:bg-gray-200"
-              }`}>
-                <div className="w-10 h-10 bg-gray-300 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium">G</span>
-                </div>
-                <div className="flex-1">
-                  <div className="font-medium">{user.name}</div>
-                  <div className={`text-sm ${user.selected ? "text-teal-100" : "text-gray-500"}`}>
-                    <span className="font-medium">Email:</span> {user.email}
-                  </div>
-                </div>
-              </div>
-            ))}
-          </div>
-
-          <button className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-lg py-3 text-lg font-medium" onClick={onClose}>
-            Create Chat
+        <div className="flex justify-end gap-2 pt-2">
+          <button onClick={onClose} className="px-4 py-2 text-gray-600 hover:text-black">Cancel</button>
+          <button onClick={handleCreateGroup} className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+            Create
           </button>
         </div>
       </div>

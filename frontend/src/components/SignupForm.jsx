@@ -1,29 +1,39 @@
 "use client"
 
-import { useState } from "react"
+import { useState,useEffect } from "react"
+import axios from "axios"
+
 
 export default function SignupForm({ onSwitchToLogin, onSignup }) {
+  const [name, setName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [picture, setPicture] = useState(null)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirmPassword, setShowConfirmPassword] = useState(false)
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    password: "",
-    confirmPassword: "",
-    picture: null,
-  })
 
-  const handleSubmit = (e) => {
+  
+
+  const handleSubmit = async(e) => {
     e.preventDefault()
-    if (formData.password !== formData.confirmPassword) {
+    if (password !== confirmPassword) {
       alert("Passwords don't match!")
       return
     }
-    onSignup()
+    try{
+    const { data } =  await axios.post("http://localhost:5000/api/user",{
+      name,
+      email,
+      password,
+      pic:picture,
+    })
+    localStorage.setItem('userInfo',JSON.stringify(data))
+    onSignup();
   }
-
-  const handleInputChange = (field, value) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
+  catch(error){
+    alert(error.response.data.message)
+  }
   }
 
   return (
@@ -49,8 +59,8 @@ export default function SignupForm({ onSwitchToLogin, onSignup }) {
             id="name"
             type="text"
             placeholder="Enter Your Name"
-            value={formData.name}
-            onChange={(e) => handleInputChange("name", e.target.value)}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
@@ -64,8 +74,8 @@ export default function SignupForm({ onSwitchToLogin, onSignup }) {
             id="email"
             type="email"
             placeholder="Enter Your Email Address"
-            value={formData.email}
-            onChange={(e) => handleInputChange("email", e.target.value)}
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
             required
           />
@@ -80,8 +90,8 @@ export default function SignupForm({ onSwitchToLogin, onSignup }) {
               id="password"
               type={showPassword ? "text" : "password"}
               placeholder="Enter Password"
-              value={formData.password}
-              onChange={(e) => handleInputChange("password", e.target.value)}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -104,8 +114,8 @@ export default function SignupForm({ onSwitchToLogin, onSignup }) {
               id="confirmPassword"
               type={showConfirmPassword ? "text" : "password"}
               placeholder="Confirm password"
-              value={formData.confirmPassword}
-              onChange={(e) => handleInputChange("confirmPassword", e.target.value)}
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               className="w-full px-4 py-3 rounded-lg border border-gray-300 pr-16 focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
             />
@@ -127,7 +137,7 @@ export default function SignupForm({ onSwitchToLogin, onSignup }) {
             id="picture"
             type="file"
             accept="image/*"
-            onChange={(e) => handleInputChange("picture", e.target.files[0])}
+            onChange={(e) => setPicture(e.target.files[0])}
             className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
           />
         </div>

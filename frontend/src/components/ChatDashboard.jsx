@@ -1,132 +1,180 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import CreateGroupModal from "./CreateGroupModal"
+import { useEffect, useState } from "react";
+import { ChatState } from "../context/ChatContext";
+import { fetchChats, accessChat } from "../utils/chatApi";
+import CreateGroupModal from "./CreateGroupModal";
 
 export default function ChatDashboard() {
-  const [showCreateGroup, setShowCreateGroup] = useState(false)
-  const [selectedChat, setSelectedChat] = useState("Prabin Acharya")
-  const [searchUser, setSearchUser] = useState("")
-  const [message, setMessage] = useState("")
+  const { user } = ChatState();
 
-  const chats = [
-    { name: "wAW", type: "group", lastMessage: "", active: false },
-    { name: "Prabin Acharya", type: "user", lastMessage: "bhabin : what up bro?", active: true },
-    { name: "Hello_World", type: "group", lastMessage: "Guest User : 1", active: false },
-    { name: "user", type: "user", lastMessage: "Guest User : hello", active: false },
-    { name: "AB", type: "user", lastMessage: "Guest User : Hi", active: false },
-    { name: "JS", type: "user", lastMessage: "Guest User : hii", active: false },
-    { name: "kihoo", type: "user", lastMessage: "123456 : ssssssssssssssssss", active: false },
-    { name: "cgat", type: "user", lastMessage: "Guest User : hii", active: false },
-    { name: "Amiy", type: "user", lastMessage: "Guest User : hey!!", active: false },
-  ]
+  const [chats, setChats] = useState([]);
+  const [selectedChat, setSelectedChat] = useState(null);
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [message, setMessage] = useState("");
+  const [search, setSearch] = useState("");
+
+  
+
+  const loadChats = async () => {
+    try {
+      const data = await fetchChats(user.token);
+      setChats(data);
+    } catch (error) {
+      alert("Failed to load chats");
+    }
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("userInfo");
+    window.location.reload();
+  };
+
+  const handleAccessChat = async (userId) => {
+    try {
+      const chat = await accessChat(userId, user.token);
+      if (!chats.find((c) => c._id === chat._id)) {
+        setChats([chat, ...chats]);
+      }
+      setSelectedChat(chat);
+    } catch (error) {
+      alert("Error accessing chat");
+    }
+  };
+
+  useEffect(() => {
+    if (user) loadChats();
+  }, [user]);
+
+  const handleGroupCreated = () => {
+    setShowCreateGroup(false);
+    loadChats();
+  };
 
   return (
     <div className="h-screen bg-white flex flex-col">
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4 flex items-center justify-between">
+      <header className="bg-gray-100 px-4 py-2 flex items-center justify-between border-b">
+        <input
+          type="text"
+          placeholder="🔍 Search User"
+          className="px-4 py-1 rounded-md border w-64"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+
+        <h1 className="text-xl font-semibold text-gray-700">Talk-A-Tive</h1>
+
         <div className="flex items-center space-x-4">
-          <div className="relative">
-            <svg className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-            </svg>
-            <input
-              placeholder="Search User"
-              value={searchUser}
-              onChange={(e) => setSearchUser(e.target.value)}
-              className="pl-10 w-64 px-4 py-2 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
+          <div className="relative group">
+            <span className="cursor-pointer">🔔</span>
+            {notifications.length > 0 && (
+              <div className="absolute top-6 right-0 bg-white shadow rounded w-64 text-sm hidden group-hover:block z-10">
+                {notifications.map((n, i) => (
+                  <div
+                    key={i}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
+                    onClick={() => {
+                      setSelectedChat(n.chat);
+                      setNotifications((prev) =>
+                        prev.filter((_, idx) => idx !== i)
+                      );
+                    }}
+                  >
+                    New Message from {n.sender?.name}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
-        </div>
 
-        <h1 className="text-2xl font-light text-gray-700">Talk-A-Tive</h1>
-
-        <div className="flex items-center space-x-4">
-          <button className="p-2 hover:bg-gray-100 rounded-lg">
-            🔔
-          </button>
           <div className="flex items-center space-x-2">
-            <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-              <span className="text-sm font-medium">U</span>
-            </div>
-            <span>⬇️</span>
+            <img
+              src={user.pic}
+              alt="avatar"
+              className="w-8 h-8 rounded-full"
+            />
+            <button onClick={handleLogout}>🚪</button>
           </div>
         </div>
       </header>
 
-      <div className="flex-1 flex">
-        {/* Sidebar */}
-        <div className="w-80 bg-gradient-to-b from-cyan-400 to-blue-500 p-4">
-          <div className="bg-white rounded-2xl h-full p-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-medium text-gray-700">My Chats</h2>
-              <button
-                onClick={() => setShowCreateGroup(true)}
-                className="bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-lg px-3 py-1 text-sm flex items-center space-x-1"
-              >
-                <span>New Group Chat ➕</span>
-              </button>
-            </div>
+      {/* Main Chat Layout */}
+      <div className="flex flex-1">
+        {/* Chat List Sidebar */}
+        <div className="w-1/4 bg-blue-50 border-r p-4">
+          <div className="flex justify-between mb-4">
+            <h2 className="text-lg font-semibold">My Chats</h2>
+            <button
+              onClick={() => setShowCreateGroup(true)}
+              className="text-sm bg-blue-500 text-white px-2 py-1 rounded-md"
+            >
+              New Group Chat ➕
+            </button>
+          </div>
 
-            <div className="space-y-2">
-              {chats.map((chat, index) => (
+          <div className="space-y-2 overflow-y-auto h-[85vh] pr-2">
+            {chats.map((chat) => {
+              const chatName = chat.isGroupChat
+                ? chat.chatName
+                : chat.users.find((u) => u._id !== user._id)?.name;
+              return (
                 <div
-                  key={index}
-                  className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                    chat.active ? "bg-teal-500 text-white" : "bg-gray-100 hover:bg-gray-200 text-gray-700"
+                  key={chat._id}
+                  className={`p-3 rounded-lg cursor-pointer ${
+                    selectedChat?._id === chat._id
+                      ? "bg-cyan-600 text-white"
+                      : "bg-white hover:bg-gray-100 text-gray-800"
                   }`}
-                  onClick={() => setSelectedChat(chat.name)}
+                  onClick={() => setSelectedChat(chat)}
                 >
-                  <div className="font-medium">{chat.name}</div>
-                  {chat.lastMessage && (
-                    <div className={`text-sm ${chat.active ? "text-teal-100" : "text-gray-500"}`}>
-                      {chat.lastMessage}
+                  <div className="font-medium">{chatName}</div>
+                  {chat.latestMessage && (
+                    <div className="text-sm truncate">
+                      <strong>{chat.latestMessage.sender.name}:</strong>{" "}
+                      {chat.latestMessage.content}
                     </div>
                   )}
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* Chat Area */}
-        <div className="flex-1 bg-gradient-to-b from-cyan-400 to-blue-500 p-4">
-          <div className="bg-white rounded-2xl h-full flex flex-col">
-            <div className="p-4 border-b border-gray-200 flex items-center justify-between">
-              <h3 className="text-lg font-medium text-gray-700">{selectedChat}</h3>
-              <button className="p-2 hover:bg-gray-100 rounded-lg">👁️</button>
-            </div>
-
-            <div className="flex-1 p-4 flex flex-col justify-end">
-              <div className="space-y-4">
-                <div className="flex justify-start">
-                  <div className="flex items-start space-x-2">
-                    <div className="w-8 h-8 bg-gray-300 rounded-full flex items-center justify-center">
-                      <span className="text-sm font-medium">P</span>
-                    </div>
-                    <div className="bg-green-200 text-gray-800 px-3 py-2 rounded-lg max-w-xs">what up bro?</div>
-                  </div>
-                </div>
-
-                <div className="flex justify-end">
-                  <div className="bg-blue-500 text-white px-3 py-2 rounded-lg max-w-xs">Hello</div>
+        {/* Chat Panel */}
+        <div className="flex-1 bg-gray-100 p-4 flex flex-col justify-between">
+          {selectedChat ? (
+            <>
+              <div>
+                <h2 className="text-lg font-bold mb-2">
+                  {selectedChat.isGroupChat
+                    ? selectedChat.chatName
+                    : selectedChat.users.find((u) => u._id !== user._id)?.name}
+                </h2>
+                <div className="bg-white p-4 rounded-lg h-[70vh] overflow-y-auto shadow-inner">
+                  {/* Messages will appear here */}
+                  <p className="text-gray-500 text-center">No messages yet</p>
                 </div>
               </div>
+              <div className="mt-4">
+                <input
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder="Enter a message..."
+                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </>
+          ) : (
+            <div className="text-center text-gray-500 my-auto">
+              Select a chat to start messaging
             </div>
-
-            <div className="p-4 border-t border-gray-200">
-              <input
-                placeholder="Enter a message.."
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              />
-            </div>
-          </div>
+          )}
         </div>
       </div>
 
-      {showCreateGroup && <CreateGroupModal onClose={() => setShowCreateGroup(false)} />}
+      {showCreateGroup && <CreateGroupModal onCreated={handleGroupCreated} />}
     </div>
-  )
+  );
 }

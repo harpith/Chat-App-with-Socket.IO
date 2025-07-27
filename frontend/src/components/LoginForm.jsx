@@ -1,15 +1,27 @@
 "use client"
 
 import { useState } from "react"
+import axios from "axios";
+
 
 export default function LoginForm({ onSwitchToSignup, onLogin }) {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const handleLogin = (e) => {
+  const handleLogin = async(e) => {
     e.preventDefault()
+    try{
+      const { data } =  await axios.post("http://localhost:5000/api/user/login",{
+      email,
+      password,
+      });
+    localStorage.setItem('userInfo',JSON.stringify(data))
     onLogin()
+    }
+  catch(error){
+     alert(error.response?.data?.message || "Login failed. Try again.");
+  }
   }
 
   const handleGuestLogin = () => {
