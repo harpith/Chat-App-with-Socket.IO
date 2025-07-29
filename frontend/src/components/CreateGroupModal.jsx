@@ -1,7 +1,6 @@
-// components/CreateGroupModal.jsx
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import axios from "axios"
 
 export default function CreateGroupModal({ onClose, onCreated }) {
@@ -11,12 +10,32 @@ export default function CreateGroupModal({ onClose, onCreated }) {
   const [searchResults, setSearchResults] = useState([])
   const userInfo = JSON.parse(localStorage.getItem("userInfo"))
 
-  const handleSearch = async () => {
-    if (!searchTerm) return
-    const { data } = await axios.get(`http://localhost:5000/api/user?search=${searchTerm}`, {
-      headers: { Authorization: `Bearer ${userInfo.token}` },
-    })
-    setSearchResults(data)
+  // ✅ Fetch users when searchTerm changes OR is initially empty
+  useEffect(() => {
+    const delayDebounce = setTimeout(() => {
+      handleSearch(searchTerm)
+    }, 400)
+
+    return () => clearTimeout(delayDebounce)
+  }, [searchTerm])
+
+  // ✅ Also fetch once on initial load
+  useEffect(() => {
+    handleSearch("")
+  }, [])
+
+  const handleSearch = async (query) => {
+    try {
+      const { data } = await axios.get(
+        `http://localhost:5000/api/user?search=${query || ""}`,
+        {
+          headers: { Authorization: `Bearer ${userInfo.token}` },
+        }
+      )
+      setSearchResults(data)
+    } catch (err) {
+      console.error("Search error:", err)
+    }
   }
 
   const handleAddUser = (user) => {
@@ -65,18 +84,13 @@ export default function CreateGroupModal({ onClose, onCreated }) {
           className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
         />
 
-        <div className="flex space-x-2">
-          <input
-            type="text"
-            placeholder="Search users"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="flex-1 px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
-          />
-          <button onClick={handleSearch} className="bg-blue-500 text-white px-3 py-2 rounded-md">
-            Search
-          </button>
-        </div>
+        <input
+          type="text"
+          placeholder="Search users"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+          className="w-full px-4 py-2 border rounded-md focus:ring-2 focus:ring-blue-400"
+        />
 
         <div className="flex flex-wrap gap-2">
           {selectedUsers.map((user) => (

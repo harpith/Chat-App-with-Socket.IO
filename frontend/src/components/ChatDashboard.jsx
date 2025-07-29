@@ -1,56 +1,39 @@
-"use client";
+"use client"
 
-import { useEffect, useState } from "react";
-import { ChatState } from "../context/ChatContext";
-import { fetchChats, accessChat } from "../utils/chatApi";
-import CreateGroupModal from "./CreateGroupModal";
+import { useEffect, useState } from "react"
+import { ChatState } from "../context/ChatContext"
+import { fetchChats } from "../utils/chatApi"
+import CreateGroupModal from "./CreateGroupModal"
+import ChatBox from "./ChatBox"
 
 export default function ChatDashboard() {
-  const { user } = ChatState();
-
-  const [chats, setChats] = useState([]);
-  const [selectedChat, setSelectedChat] = useState(null);
-  const [showCreateGroup, setShowCreateGroup] = useState(false);
-  const [notifications, setNotifications] = useState([]);
-  const [message, setMessage] = useState("");
-  const [search, setSearch] = useState("");
-
-  
+  const { user, chats, setChats, selectedChat, setSelectedChat } = ChatState()
+  const [showCreateGroup, setShowCreateGroup] = useState(false)
+  const [notifications, setNotifications] = useState([])
+  const [search, setSearch] = useState("")
 
   const loadChats = async () => {
     try {
-      const data = await fetchChats(user.token);
-      setChats(data);
+      const data = await fetchChats(user.token)
+      setChats(data)
     } catch (error) {
-      alert("Failed to load chats");
+      alert("Failed to load chats")
     }
-  };
+  }
 
   const handleLogout = () => {
-    localStorage.removeItem("userInfo");
-    window.location.reload();
-  };
-
-  const handleAccessChat = async (userId) => {
-    try {
-      const chat = await accessChat(userId, user.token);
-      if (!chats.find((c) => c._id === chat._id)) {
-        setChats([chat, ...chats]);
-      }
-      setSelectedChat(chat);
-    } catch (error) {
-      alert("Error accessing chat");
-    }
-  };
-
-  useEffect(() => {
-    if (user) loadChats();
-  }, [user]);
+    localStorage.removeItem("userInfo")
+    window.location.reload()
+  }
 
   const handleGroupCreated = () => {
-    setShowCreateGroup(false);
-    loadChats();
-  };
+    setShowCreateGroup(false)
+    loadChats()
+  }
+
+  useEffect(() => {
+    if (user) loadChats()
+  }, [user])
 
   return (
     <div className="h-screen bg-white flex flex-col">
@@ -76,10 +59,8 @@ export default function ChatDashboard() {
                     key={i}
                     className="px-4 py-2 hover:bg-gray-100 cursor-pointer"
                     onClick={() => {
-                      setSelectedChat(n.chat);
-                      setNotifications((prev) =>
-                        prev.filter((_, idx) => idx !== i)
-                      );
+                      setSelectedChat(n.chat)
+                      setNotifications((prev) => prev.filter((_, idx) => idx !== i))
                     }}
                   >
                     New Message from {n.sender?.name}
@@ -90,19 +71,15 @@ export default function ChatDashboard() {
           </div>
 
           <div className="flex items-center space-x-2">
-            <img
-              src={user.pic}
-              alt="avatar"
-              className="w-8 h-8 rounded-full"
-            />
+            <img src={user.pic} alt="avatar" className="w-8 h-8 rounded-full" />
             <button onClick={handleLogout}>🚪</button>
           </div>
         </div>
       </header>
 
-      {/* Main Chat Layout */}
+      {/* Main Layout */}
       <div className="flex flex-1">
-        {/* Chat List Sidebar */}
+        {/* Chat Sidebar */}
         <div className="w-1/4 bg-blue-50 border-r p-4">
           <div className="flex justify-between mb-4">
             <h2 className="text-lg font-semibold">My Chats</h2>
@@ -110,15 +87,16 @@ export default function ChatDashboard() {
               onClick={() => setShowCreateGroup(true)}
               className="text-sm bg-blue-500 text-white px-2 py-1 rounded-md"
             >
-              New Group Chat ➕
+              ➕ New Group
             </button>
           </div>
 
           <div className="space-y-2 overflow-y-auto h-[85vh] pr-2">
-            {chats.map((chat) => {
+            {chats?.map((chat) => {
               const chatName = chat.isGroupChat
                 ? chat.chatName
-                : chat.users.find((u) => u._id !== user._id)?.name;
+                : chat.users.find((u) => u._id !== user._id)?.name
+
               return (
                 <div
                   key={chat._id}
@@ -137,44 +115,17 @@ export default function ChatDashboard() {
                     </div>
                   )}
                 </div>
-              );
+              )
             })}
           </div>
         </div>
 
-        {/* Chat Panel */}
-        <div className="flex-1 bg-gray-100 p-4 flex flex-col justify-between">
-          {selectedChat ? (
-            <>
-              <div>
-                <h2 className="text-lg font-bold mb-2">
-                  {selectedChat.isGroupChat
-                    ? selectedChat.chatName
-                    : selectedChat.users.find((u) => u._id !== user._id)?.name}
-                </h2>
-                <div className="bg-white p-4 rounded-lg h-[70vh] overflow-y-auto shadow-inner">
-                  {/* Messages will appear here */}
-                  <p className="text-gray-500 text-center">No messages yet</p>
-                </div>
-              </div>
-              <div className="mt-4">
-                <input
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder="Enter a message..."
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-            </>
-          ) : (
-            <div className="text-center text-gray-500 my-auto">
-              Select a chat to start messaging
-            </div>
-          )}
-        </div>
+        {/* Chat Window */}
+        <ChatBox />
       </div>
 
-      {showCreateGroup && <CreateGroupModal onCreated={handleGroupCreated} />}
+      {/* Create Group Modal */}
+      {showCreateGroup && <CreateGroupModal onCreated={handleGroupCreated} onClose={() => setShowCreateGroup(false)} />}
     </div>
-  );
+  )
 }
