@@ -42,16 +42,23 @@ export default function ChatDashboard() {
         <input
           type="text"
           placeholder="🔍 Search User"
-          className="px-4 py-1 rounded-md border w-64"
+          className="px-4 py-1 rounded-md border w-40 md:w-64"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <h1 className="text-xl font-semibold text-gray-700">Talk-A-Tive</h1>
+        <h1 className="text-md md:text-xl font-semibold text-gray-700">Talk-A-Tive</h1>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 md:space-x-4">
           <div className="relative group">
-            <span className="cursor-pointer">🔔</span>
+            <span className="cursor-pointer relative">
+              🔔
+              {notifications.length > 0 && (
+                <span className="absolute top-[-6px] right-[-6px] bg-red-500 text-white text-xs px-1 rounded-full">
+                  {notifications.length}
+                </span>
+              )}
+            </span>
             {notifications.length > 0 && (
               <div className="absolute top-6 right-0 bg-white shadow rounded w-64 text-sm hidden group-hover:block z-10">
                 {notifications.map((n, i) => (
@@ -63,7 +70,7 @@ export default function ChatDashboard() {
                       setNotifications((prev) => prev.filter((_, idx) => idx !== i))
                     }}
                   >
-                    New Message from {n.sender?.name}
+                    📩 New Message from {n.sender?.name}
                   </div>
                 ))}
               </div>
@@ -73,20 +80,21 @@ export default function ChatDashboard() {
           <div className="flex items-center space-x-2">
             <img src={user.pic} alt="avatar" className="w-8 h-8 rounded-full" />
             <button
-  onClick={handleLogout}
-  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition duration-200"
->
-  Logout
-</button>
-
+              onClick={handleLogout}
+              className="bg-red-500 hover:bg-red-600 text-white px-3 md:px-4 py-1 md:py-2 rounded-md transition duration-200 text-sm md:text-base"
+            >
+              Logout
+            </button>
           </div>
         </div>
       </header>
 
-      {/* Main Layout */}
-      <div className="flex flex-1">
-        {/* Chat Sidebar */}
-        <div className="w-1/4 bg-blue-50 border-r p-4">
+      {/* Main Content */}
+      <div className="flex flex-1 overflow-hidden">
+        {/* Sidebar */}
+        <div className={`w-full md:w-1/4 border-r bg-blue-50 p-4 overflow-y-auto transition-all duration-300 ${
+          selectedChat ? "hidden md:block" : "block"
+        }`}>
           <div className="flex justify-between mb-4">
             <h2 className="text-lg font-semibold">My Chats</h2>
             <button
@@ -127,11 +135,18 @@ export default function ChatDashboard() {
         </div>
 
         {/* Chat Window */}
-        <ChatBox />
+        <div className={`flex-1 w-full ${selectedChat ? "block" : "hidden"} md:block`}>
+          <ChatBox
+            notifications={notifications}
+            setNotifications={setNotifications}
+          />
+        </div>
       </div>
 
       {/* Create Group Modal */}
-      {showCreateGroup && <CreateGroupModal onCreated={handleGroupCreated} onClose={() => setShowCreateGroup(false)} />}
+      {showCreateGroup && (
+        <CreateGroupModal onCreated={handleGroupCreated} onClose={() => setShowCreateGroup(false)} />
+      )}
     </div>
   )
 }
