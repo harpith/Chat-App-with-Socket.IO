@@ -72,7 +72,13 @@ export default function ChatDashboard() {
 
           <div className="flex items-center space-x-2">
             <img src={user.pic} alt="avatar" className="w-8 h-8 rounded-full" />
-            <button onClick={handleLogout}>🚪</button>
+            <button
+  onClick={handleLogout}
+  className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded-md transition duration-200"
+>
+  Logout
+</button>
+
           </div>
         </div>
       </header>
