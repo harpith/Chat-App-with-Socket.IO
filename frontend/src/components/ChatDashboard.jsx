@@ -47,7 +47,7 @@ export default function ChatDashboard() {
           onChange={(e) => setSearch(e.target.value)}
         />
 
-        <h1 className="text-md md:text-xl font-semibold text-gray-700">Talk-A-Tive</h1>
+        <h1 className="text-md md:text-xl font-semibold text-gray-700">CHIT-CHAT</h1>
 
         <div className="flex items-center space-x-2 md:space-x-4">
           <div className="relative group">
