@@ -44,7 +44,7 @@ This project was built to demonstrate how to integrate real-time communication i
 
 ## 🙌 Credits
 
-Developed by [Your Name].
+Developed by @harpith.
 
 ---
 
