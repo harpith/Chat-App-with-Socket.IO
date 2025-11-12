@@ -9,19 +9,24 @@ export default function LoginForm({ onSwitchToSignup, onLogin }) {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
 
-  const handleLogin = async(e) => {
+  const handleLogin = async (e) => {
     e.preventDefault()
-    try{
-      const { data } =  await axios.post("http://localhost:5000/api/user/login",{
-      email,
-      password,
-      });
-    localStorage.setItem('userInfo',JSON.stringify(data))
-    onLogin()
+    try {
+      console.log("Login attempt:", { email })
+      const { data } = await axios.post(
+        "http://localhost:5000/api/user/login",
+        { email, password },
+        { timeout: 10000 }
+      )
+      console.log("Login success:", data)
+      localStorage.setItem("userInfo", JSON.stringify(data))
+      onLogin()
+    } catch (error) {
+      console.error("Login error full:", error)
+      console.error("Login error response:", error.response)
+      const serverMsg = error.response?.data?.message || error.response?.data || null
+      alert(serverMsg || "Login failed. Try again.")
     }
-  catch(error){
-     alert(error.response?.data?.message || "Login failed. Try again.");
-  }
   }
 
   const handleGuestLogin = () => {
